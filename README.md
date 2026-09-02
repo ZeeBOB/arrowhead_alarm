@@ -34,7 +34,13 @@
 
 ---
 
-## 🎉 What's New in Version 2.2.5
+## 🎉 What's New in Version 2.2.6
+
+- ✅ **Configurable panel connection banner** - panels that do not send the
+  usual `Welcome` message can now specify their banner during setup. Use `*`
+  to accept any non-empty banner.
+
+## What's New in Version 2.2.5
 
 - ✅ **"Ready to arm" sensor fixed** - no longer shows "Unsafe" when the panel is ready; it now reports a plain On/Off (#8). Restart Home Assistant once after updating if the old wording sticks.
 - ✅ **Zone auto-detection works** - the P4075/P4076 register queries now actually reach the panel and understand its `OK` + data reply pattern (#9, #11)
@@ -254,13 +260,13 @@ This integration provides complete Home Assistant support for **Arrowhead ECi Se
 
 1. **Download Files**:
    ```bash
-   wget https://github.com/thanoskas/arrowhead_alarm/archive/refs/tags/v2.2.5.zip
-   unzip v2.2.5.zip
+  wget https://github.com/thanoskas/arrowhead_alarm/archive/refs/tags/v2.2.6.zip
+  unzip v2.2.6.zip
    ```
 
 2. **Copy Integration**:
    ```bash
-   cp -r arrowhead_alarm-2.2.5/custom_components/arrowhead_alarm /config/custom_components/
+  cp -r arrowhead_alarm-2.2.6/custom_components/arrowhead_alarm /config/custom_components/
    ```
 
 3. **Restart Home Assistant** and add the integration through the UI.

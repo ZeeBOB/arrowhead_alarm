@@ -5,6 +5,14 @@ All notable changes to the Arrowhead Alarm Panel integration will be documented 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.6] - 2026-09-02
+
+### Added
+
+- **Configurable panel connection banner** - integrations can now accept panel
+  banners that differ from the default `Welcome` message. Set `*` to accept
+  any non-empty banner.
+
 
 
 ## [2.2.5] - 2026-08-21
