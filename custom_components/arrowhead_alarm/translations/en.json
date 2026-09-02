@@ -8,6 +8,7 @@
           "host": "IP Address",
           "port": "Port Number",
           "user_pin": "User PIN",
+          "serial_authentication": "Serial over IP authentication",
           "expected_banner": "Expected connection banner",
           "username": "Username",
           "password": "Password"
@@ -16,9 +17,10 @@
           "host": "The IP address where your ECi panel can be reached",
           "port": "TCP port for communication (default: 9000)",
           "user_pin": "User number and PIN code separated by space (e.g., '1 123')",
+          "serial_authentication": "Enable only when P25E18E option 3 is enabled on the panel.",
           "expected_banner": "Panel connection banner. Use '*' to accept any non-empty banner.",
-          "username": "Not currently used - leave blank",
-          "password": "Not currently used - leave blank"
+          "username": "Serial over IP username (P25E19E), required when authentication is enabled",
+          "password": "Serial over IP password (P25E20E), required when authentication is enabled"
         }
       },
       "zone_config": {
@@ -60,6 +62,8 @@
       "connection_refused": "Connection refused by the ECi panel. Check if the panel is online and port is correct.",
       "timeout": "Connection timeout. The ECi panel may be unreachable or busy.",
       "auth_failed": "Authentication failed. Check username, password, and user PIN.",
+      "credentials_required": "Username and password are required when Serial over IP authentication is enabled.",
+      "serial_authentication_required": "This panel requires Serial over IP authentication. Enable it and enter the panel username and password.",
       "invalid_response": "Invalid response from ECi panel. The panel may be incompatible or experiencing issues.",
       "client_error": "Communication error with the ECi panel.",
       "unknown": "An unknown error occurred during setup."

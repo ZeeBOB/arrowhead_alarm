@@ -61,7 +61,7 @@ class ArrowheadECiClient:
     """ECi client with correct single area detection."""
 
     def __init__(self, host: str, port: int, user_pin: str, username: str = "",
-         password: str = "",
+         password: str = "", serial_authentication: bool = False,
                  expected_banner: str = "Welcome"):
         """Initialize the ECi client."""
         self.host = host
@@ -69,6 +69,8 @@ class ArrowheadECiClient:
         self.user_pin = user_pin
         self.username = username
         self.password = password
+        self.serial_authentication = serial_authentication
+        self.serial_authentication_required = False
         self.expected_banner = expected_banner
         
         # Firmware and protocol information
@@ -253,7 +255,32 @@ class ArrowheadECiClient:
                 return False
 
             response = response.strip()
-            if not self._matches_expected_banner(response):
+            if response.lower().startswith("login:"):
+                self.serial_authentication_required = True
+                if not self.serial_authentication:
+                    _LOGGER.warning("Panel requires Serial over IP authentication")
+                    return False
+
+                if not self.username or not self.password:
+                    _LOGGER.error("Serial authentication is enabled but credentials are missing")
+                    return False
+
+                _LOGGER.info("Authenticating with Serial over IP credentials")
+                await self._send_raw_safe(f"{self.username}\n")
+                response = await asyncio.wait_for(self._get_response_safe(), timeout=5.0)
+                if not response or not response.strip().lower().startswith("password:"):
+                    _LOGGER.error("Panel did not request a Serial over IP password")
+                    return False
+
+                await self._send_raw_safe(f"{self.password}\n")
+                response = await asyncio.wait_for(self._get_response_safe(), timeout=5.0)
+                if not self._matches_expected_banner(response):
+                    _LOGGER.error("Panel did not confirm Serial over IP authentication")
+                    return False
+            elif self._matches_expected_banner(response):
+                if self.serial_authentication:
+                    _LOGGER.warning("Serial over IP authentication is enabled in the integration but not required by the panel")
+            else:
                 _LOGGER.error("Unexpected panel connection banner: %r", response)
                 return False
 

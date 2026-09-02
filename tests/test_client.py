@@ -620,6 +620,35 @@ async def test_client_refresh_firmware_info_updates_runtime_state():
 
 
 @pytest.mark.asyncio
+async def test_authenticate_sends_credentials_before_status_when_enabled():
+    client = ArrowheadECiClient(
+        "192.168.1.100", 9000, "1 123", "serial-user", "serial-password", True
+    )
+    client._send_raw_safe = AsyncMock()
+    client._get_response_safe = AsyncMock(
+        side_effect=["login: admin", "password: password", "Welcome", "OK Status"]
+    )
+
+    assert await client._authenticate() is True
+    assert client._send_raw_safe.await_args_list == [
+        call("serial-user\n"),
+        call("serial-password\n"),
+        call("STATUS\n"),
+    ]
+    assert client.serial_authentication_required is True
+
+
+@pytest.mark.asyncio
+async def test_authenticate_detects_required_serial_authentication_when_disabled(client):
+    client._get_response_safe = AsyncMock(return_value="login: admin")
+    client._send_raw_safe = AsyncMock()
+
+    assert await client._authenticate() is False
+    assert client.serial_authentication_required is True
+    client._send_raw_safe.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_authenticate_accepts_a_custom_connection_banner(client):
     client.expected_banner = "ECi ready"
     client._send_raw_safe = AsyncMock()

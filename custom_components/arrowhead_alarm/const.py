@@ -13,6 +13,7 @@ CONF_PORT = "port"
 CONF_USER_PIN = "user_pin"
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
+CONF_SERIAL_AUTHENTICATION = "serial_authentication"
 CONF_EXPECTED_BANNER = "expected_banner"
 
 # Zone configuration options
@@ -32,6 +33,7 @@ DEFAULT_PORT = 9000
 DEFAULT_USER_PIN = "1 123"
 DEFAULT_USERNAME = ""
 DEFAULT_PASSWORD = ""
+DEFAULT_SERIAL_AUTHENTICATION = False
 DEFAULT_EXPECTED_BANNER = "Welcome"
 DEFAULT_MAX_OUTPUTS = 4
 

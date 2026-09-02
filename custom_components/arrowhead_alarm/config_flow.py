@@ -17,6 +17,8 @@ from .const import (
     DEFAULT_USER_PIN,
     DEFAULT_USERNAME,
     DEFAULT_PASSWORD,
+    CONF_SERIAL_AUTHENTICATION,
+    DEFAULT_SERIAL_AUTHENTICATION,
     CONF_EXPECTED_BANNER,
     DEFAULT_EXPECTED_BANNER,
     PANEL_CONFIG,
@@ -51,20 +53,26 @@ class ArrowheadAlarmConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            try:
-                connection_info = await self._test_connection_fixed(user_input)
-                if connection_info["success"]:
-                    self.discovery_info.update(user_input)
-                    self._detected_zones = connection_info.get("detected_zones")
-                    self._firmware_info = connection_info.get("firmware_info")
-                    
-                    return await self.async_step_zone_config()
-                else:
-                    errors["base"] = connection_info["error_type"]
-                    
-            except Exception as err:
-                _LOGGER.exception("Unexpected error during connection test: %s", err)
-                errors["base"] = "unknown"
+            if user_input.get(CONF_SERIAL_AUTHENTICATION, False) and not all(
+                user_input.get(field, "").strip()
+                for field in (CONF_USERNAME, CONF_PASSWORD)
+            ):
+                errors["base"] = "credentials_required"
+            else:
+                try:
+                    connection_info = await self._test_connection_fixed(user_input)
+                    if connection_info["success"]:
+                        self.discovery_info.update(user_input)
+                        self._detected_zones = connection_info.get("detected_zones")
+                        self._firmware_info = connection_info.get("firmware_info")
+                        
+                        return await self.async_step_zone_config()
+                    else:
+                        errors["base"] = connection_info["error_type"]
+                        
+                except Exception as err:
+                    _LOGGER.exception("Unexpected error during connection test: %s", err)
+                    errors["base"] = "unknown"
 
         return self.async_show_form(
             step_id="user",
@@ -261,6 +269,9 @@ class ArrowheadAlarmConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         user_pin = user_input.get(CONF_USER_PIN, DEFAULT_USER_PIN)
         username = user_input.get(CONF_USERNAME, DEFAULT_USERNAME)
         password = user_input.get(CONF_PASSWORD, DEFAULT_PASSWORD)
+        serial_authentication = user_input.get(
+            CONF_SERIAL_AUTHENTICATION, DEFAULT_SERIAL_AUTHENTICATION
+        )
         expected_banner = user_input.get(CONF_EXPECTED_BANNER, DEFAULT_EXPECTED_BANNER)
 
         _LOGGER.info("=== TESTING CONNECTION (FIXED FOR YOUR PANEL) ===")
@@ -288,13 +299,18 @@ class ArrowheadAlarmConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         client = None
         try:
             client = ArrowheadECiClient(
-                host, port, user_pin, username, password,
+                host, port, user_pin, username, password, serial_authentication,
                 expected_banner=expected_banner,
             )
             
             success = await asyncio.wait_for(client.connect(), timeout=30.0)
             if not success:
-                return {"success": False, "error_type": "auth_failed"}
+                error_type = (
+                    "serial_authentication_required"
+                    if getattr(client, "serial_authentication_required", False) is True
+                    else "auth_failed"
+                )
+                return {"success": False, "error_type": error_type}
                 
             status = await asyncio.wait_for(client.get_status(), timeout=15.0)
             if not isinstance(status, dict):
@@ -868,6 +884,12 @@ class ArrowheadAlarmConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_USER_PIN, 
                 default=user_input.get(CONF_USER_PIN, DEFAULT_USER_PIN)
             ): cv.string,
+            vol.Optional(
+                CONF_SERIAL_AUTHENTICATION,
+                default=user_input.get(
+                    CONF_SERIAL_AUTHENTICATION, DEFAULT_SERIAL_AUTHENTICATION
+                )
+            ): bool,
             vol.Optional(
                 CONF_EXPECTED_BANNER,
                 default=user_input.get(CONF_EXPECTED_BANNER, DEFAULT_EXPECTED_BANNER)

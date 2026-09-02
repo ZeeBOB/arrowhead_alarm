@@ -22,6 +22,8 @@ from .const import (
     DEFAULT_USER_PIN,
     DEFAULT_USERNAME,
     DEFAULT_PASSWORD,
+    CONF_SERIAL_AUTHENTICATION,
+    DEFAULT_SERIAL_AUTHENTICATION,
     CONF_EXPECTED_BANNER,
     DEFAULT_EXPECTED_BANNER,
     SERVICE_TIMEOUTS,
@@ -179,6 +181,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             config["user_pin"], 
             config["username"], 
             config["password"],
+            config["serial_authentication"],
             expected_banner=config["expected_banner"],
         )
 
@@ -326,6 +329,10 @@ async def _validate_entry_configuration(entry: ConfigEntry) -> Dict[str, Any]:
         else:
             result["config"]["user_pin"] = DEFAULT_USER_PIN
         
+        serial_authentication = entry.data.get(
+            CONF_SERIAL_AUTHENTICATION, DEFAULT_SERIAL_AUTHENTICATION
+        )
+        result["config"]["serial_authentication"] = serial_authentication
         result["config"]["username"] = entry.data.get("username", DEFAULT_USERNAME)
         result["config"]["password"] = entry.data.get("password", DEFAULT_PASSWORD)
         expected_banner = entry.data.get(CONF_EXPECTED_BANNER, DEFAULT_EXPECTED_BANNER)
@@ -334,6 +341,14 @@ async def _validate_entry_configuration(entry: ConfigEntry) -> Dict[str, Any]:
             result["valid"] = False
         else:
             result["config"]["expected_banner"] = expected_banner.strip()
+        if serial_authentication and not all(
+            result["config"][field].strip() for field in ("username", "password")
+        ):
+            result["errors"].append(
+                "Username and password are required when Serial over IP authentication is enabled"
+            )
+            result["valid"] = False
+
         # Extract and validate zones configuration
         auto_detect_zones = entry.data.get(CONF_AUTO_DETECT_ZONES, True)
         max_zones = entry.data.get(CONF_MAX_ZONES, 16)

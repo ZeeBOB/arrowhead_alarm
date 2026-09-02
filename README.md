@@ -131,9 +131,10 @@ Before installing the Home Assistant integration, you **must** configure your Ar
 
 - Enable **Serial Over IP** - This is required for TCP/IP communication with Home Assistant
 
-### Serial Port Options (P25E19-21E)
+### Serial Port Options (P25E18E-21E)
 
-- Leave **Serial Authorization** (Option C under the options tab) **disabled** - the integration does not use username/password authentication; only the User PIN is sent for arm/disarm
+- **Optional authentication**: If **P25E18E option 3** is enabled, enable **Serial over IP authentication** in the integration and enter the username from **P25E19E** and password from **P25E20E**.
+- If P25E18E option 3 is disabled, leave the integration authentication toggle disabled.
 
 ### Configuration Steps
 
@@ -286,15 +287,16 @@ The integration uses a **guided configuration wizard** with the following steps:
 | **Host** | IP address of ECi panel | - | Yes |
 | **Port** | TCP port for communication | 9000 | No |
 | **User PIN** | User number and PIN code | "1 123" | Yes |
+| **Serial over IP authentication** | Matches P25E18E option 3 | disabled | No |
 | **Expected connection banner** | Panel banner to confirm the connection | `Welcome` | No |
-| **Username** | ~~Admin username~~ (not used) | blank | No |
-| **Password** | ~~Admin password~~ (not used) | blank | No |
+| **Username** | Serial over IP username (P25E19E) | blank | When authentication is enabled |
+| **Password** | Serial over IP password (P25E20E) | blank | When authentication is enabled |
 | **Areas** | Active areas (comma-separated) | "1" | Yes |
 | **Max Outputs** | Number of outputs to control | 4 | No |
 
 
 
-> **⚠️ Authentication Note**: Username/password authentication is **NOT currently supported**. The ECi panel uses **no encryption** for TCP/IP communication. Only User PIN is required for arm/disarm operations.
+> **⚠️ Authentication Note**: Serial over IP authentication is optional and must match P25E18E option 3. The connection is not encrypted; use a trusted network and protect panel credentials accordingly. The User PIN remains required for arm/disarm operations.
 
 > **Advanced connection setting**: Use the default `Welcome` banner unless your panel reports a different initial banner. Set **Expected connection banner** to the panel's prefix, or `*` to accept any non-empty banner.
 

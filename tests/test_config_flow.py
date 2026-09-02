@@ -11,6 +11,7 @@ from custom_components.arrowhead_alarm.const import (
     CONF_AREAS,
     CONF_EXPECTED_BANNER,
     CONF_MAX_ZONES,
+    CONF_SERIAL_AUTHENTICATION,
     CONF_USER_PIN,
     DEFAULT_USER_PIN,
 )
@@ -28,8 +29,22 @@ async def test_user_step_is_connection_form(config_flow):
     assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "user"
     assert "host" in result["data_schema"].schema
+    assert CONF_SERIAL_AUTHENTICATION in result["data_schema"].schema
     assert CONF_EXPECTED_BANNER in result["data_schema"].schema
     assert "panel_type" not in result["data_schema"].schema
+
+
+@pytest.mark.asyncio
+async def test_user_step_requires_credentials_for_serial_authentication(config_flow):
+    result = await config_flow.async_step_user({
+        "host": "192.168.1.100",
+        CONF_SERIAL_AUTHENTICATION: True,
+        "username": "",
+        "password": "",
+    })
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["errors"] == {"base": "credentials_required"}
 
 
 def test_validate_areas_input_deduplicates_and_sorts(config_flow):
@@ -84,15 +99,33 @@ async def test_connection_test_uses_eci_client(config_flow):
             "host": "192.168.1.100",
             "port": 9000,
             CONF_USER_PIN: DEFAULT_USER_PIN,
+            CONF_SERIAL_AUTHENTICATION: False,
             "username": "",
             "password": "",
         })
 
     assert result["success"] is True
     client_factory.assert_called_once_with(
-        "192.168.1.100", 9000, DEFAULT_USER_PIN, "", "",
+        "192.168.1.100", 9000, DEFAULT_USER_PIN, "", "", False,
         expected_banner="Welcome",
     )
     client.connect.assert_awaited_once()
 
 
+@pytest.mark.asyncio
+async def test_connection_test_reports_required_serial_authentication(config_flow):
+    writer = MagicMock()
+    writer.wait_closed = AsyncMock()
+    client = MagicMock(serial_authentication_required=True)
+    client.connect = AsyncMock(return_value=False)
+    client.disconnect = AsyncMock()
+
+    with patch("asyncio.open_connection", return_value=(AsyncMock(), writer)), \
+         patch("custom_components.arrowhead_alarm.config_flow.ArrowheadECiClient", return_value=client):
+        result = await config_flow._test_connection_fixed({
+            "host": "192.168.1.100",
+            "port": 9000,
+            CONF_USER_PIN: DEFAULT_USER_PIN,
+        })
+
+    assert result == {"success": False, "error_type": "serial_authentication_required"}
