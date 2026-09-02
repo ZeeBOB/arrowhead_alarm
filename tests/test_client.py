@@ -1,7 +1,7 @@
 """Tests for the ECi client."""
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 
@@ -224,6 +224,23 @@ async def test_client_refresh_firmware_info_updates_runtime_state():
     assert client._status["supports_mode_4"] is True
     assert client._status["protocol_mode"] == "MODE_1"
     assert client._status["mode_4_features_active"] is False
+
+
+@pytest.mark.asyncio
+async def test_authenticate_accepts_a_custom_connection_banner(client):
+    client.expected_banner = "ECi ready"
+    client._send_raw_safe = AsyncMock()
+    client._get_response_safe = AsyncMock(side_effect=["ECi Ready 10.3", "OK Status"])
+
+    assert await client._authenticate() is True
+    client._send_raw_safe.assert_awaited_once_with("STATUS\n")
+
+
+def test_banner_wildcard_accepts_any_nonempty_response(client):
+    client.expected_banner = "*"
+
+    assert client._matches_expected_banner("Firmware-specific banner") is True
+    assert client._matches_expected_banner("") is False
 
 
 @pytest.mark.asyncio

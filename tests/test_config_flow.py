@@ -9,6 +9,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from custom_components.arrowhead_alarm.config_flow import ArrowheadAlarmConfigFlow
 from custom_components.arrowhead_alarm.const import (
     CONF_AREAS,
+    CONF_EXPECTED_BANNER,
     CONF_MAX_ZONES,
     CONF_USER_PIN,
     DEFAULT_USER_PIN,
@@ -27,6 +28,7 @@ async def test_user_step_is_connection_form(config_flow):
     assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "user"
     assert "host" in result["data_schema"].schema
+    assert CONF_EXPECTED_BANNER in result["data_schema"].schema
     assert "panel_type" not in result["data_schema"].schema
 
 
@@ -75,7 +77,7 @@ async def test_connection_test_uses_eci_client(config_flow):
     client.disconnect = AsyncMock()
 
     with patch("asyncio.open_connection", return_value=(AsyncMock(), writer)), \
-         patch("custom_components.arrowhead_alarm.config_flow.ArrowheadECiClient", return_value=client), \
+         patch("custom_components.arrowhead_alarm.config_flow.ArrowheadECiClient", return_value=client) as client_factory, \
          patch.object(config_flow, "_detect_firmware_fixed", new=AsyncMock(return_value={})), \
          patch.object(config_flow, "_detect_zones_fixed", new=AsyncMock(return_value={})):
         result = await config_flow._test_connection_fixed({
@@ -87,4 +89,10 @@ async def test_connection_test_uses_eci_client(config_flow):
         })
 
     assert result["success"] is True
+    client_factory.assert_called_once_with(
+        "192.168.1.100", 9000, DEFAULT_USER_PIN, "", "",
+        expected_banner="Welcome",
+    )
     client.connect.assert_awaited_once()
+
+

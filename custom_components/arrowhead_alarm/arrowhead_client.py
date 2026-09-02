@@ -61,7 +61,8 @@ class ArrowheadECiClient:
     """ECi client with correct single area detection."""
 
     def __init__(self, host: str, port: int, user_pin: str, username: str = "",
-                 password: str = "", debug_raw_comms: bool = True):
+                 password: str = "", debug_raw_comms: bool = True,
+                 expected_banner: str = "Welcome"):
         """Initialize the ECi client."""
         self.host = host
         self.port = port
@@ -69,6 +70,7 @@ class ArrowheadECiClient:
         self.username = username
         self.password = password
         self.debug_raw_comms = debug_raw_comms
+        self.expected_banner = expected_banner
         
         # Firmware and protocol information
         self.firmware_version = "Unknown"
@@ -246,34 +248,37 @@ class ArrowheadECiClient:
     async def _authenticate(self) -> bool:
         """Authenticate with the panel."""
         try:
-            _LOGGER.info("Attempting authentication")
+            response = await asyncio.wait_for(self._get_response_safe(), timeout=5.0)
+            if not response:
+                _LOGGER.error("Panel did not send a connection banner")
+                return False
+
+            response = response.strip()
+            if not self._matches_expected_banner(response):
+                _LOGGER.error("Unexpected panel connection banner: %r", response)
+                return False
+
+            _LOGGER.info("Panel connection confirmed")
             await self._send_raw_safe("STATUS\n")
-            
-            try:
-                response = await asyncio.wait_for(self._get_response_safe(), timeout=5.0)
-                if response:
-                    _LOGGER.info("Authentication successful - panel responded")
-                    return True
-            except asyncio.TimeoutError:
-                pass
-            
-            await self._send_raw_safe("STATUS\n")
-            try:
-                response = await asyncio.wait_for(self._get_response_safe(), timeout=3.0)
-                if response:
-                    return True
-            except asyncio.TimeoutError:
-                pass
-            
-            if self.writer and not self.writer.is_closing():
-                _LOGGER.info("Connection stable, assuming authentication success")
+            response = await asyncio.wait_for(self._get_response_safe(), timeout=5.0)
+            if response:
+                _LOGGER.info("Authentication successful - panel responded")
                 return True
-            
+
+            _LOGGER.error("Panel did not respond to the status request")
             return False
                 
         except Exception as err:
             _LOGGER.error("Authentication error: %s", err)
             return False
+
+    def _matches_expected_banner(self, response: Optional[str]) -> bool:
+        """Return whether a panel response matches the configured banner."""
+        if not response:
+            return False
+        if self.expected_banner == "*":
+            return True
+        return response.strip().lower().startswith(self.expected_banner.lower())
 
     async def _configure_protocol(self) -> None:
         """Configure protocol mode."""

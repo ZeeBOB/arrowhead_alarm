@@ -17,6 +17,8 @@ from .const import (
     DEFAULT_USER_PIN,
     DEFAULT_USERNAME,
     DEFAULT_PASSWORD,
+    CONF_EXPECTED_BANNER,
+    DEFAULT_EXPECTED_BANNER,
     PANEL_CONFIG,
     CONF_AUTO_DETECT_ZONES,
     CONF_MAX_ZONES,
@@ -259,6 +261,7 @@ class ArrowheadAlarmConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         user_pin = user_input.get(CONF_USER_PIN, DEFAULT_USER_PIN)
         username = user_input.get(CONF_USERNAME, DEFAULT_USERNAME)
         password = user_input.get(CONF_PASSWORD, DEFAULT_PASSWORD)
+        expected_banner = user_input.get(CONF_EXPECTED_BANNER, DEFAULT_EXPECTED_BANNER)
 
         _LOGGER.info("=== TESTING CONNECTION (FIXED FOR YOUR PANEL) ===")
         _LOGGER.info("Host: %s, Port: %d", host, port)
@@ -284,7 +287,10 @@ class ArrowheadAlarmConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # Test full client functionality
         client = None
         try:
-            client = ArrowheadECiClient(host, port, user_pin, username, password)
+            client = ArrowheadECiClient(
+                host, port, user_pin, username, password,
+                expected_banner=expected_banner,
+            )
             
             success = await asyncio.wait_for(client.connect(), timeout=30.0)
             if not success:
@@ -861,6 +867,10 @@ class ArrowheadAlarmConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional(
                 CONF_USER_PIN, 
                 default=user_input.get(CONF_USER_PIN, DEFAULT_USER_PIN)
+            ): cv.string,
+            vol.Optional(
+                CONF_EXPECTED_BANNER,
+                default=user_input.get(CONF_EXPECTED_BANNER, DEFAULT_EXPECTED_BANNER)
             ): cv.string,
             vol.Optional(
                 CONF_USERNAME, 

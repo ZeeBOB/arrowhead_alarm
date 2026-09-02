@@ -286,6 +286,7 @@ The integration uses a **guided configuration wizard** with the following steps:
 | **Host** | IP address of ECi panel | - | Yes |
 | **Port** | TCP port for communication | 9000 | No |
 | **User PIN** | User number and PIN code | "1 123" | Yes |
+| **Expected connection banner** | Panel banner to confirm the connection | `Welcome` | No |
 | **Username** | ~~Admin username~~ (not used) | blank | No |
 | **Password** | ~~Admin password~~ (not used) | blank | No |
 | **Areas** | Active areas (comma-separated) | "1" | Yes |
@@ -294,6 +295,8 @@ The integration uses a **guided configuration wizard** with the following steps:
 
 
 > **⚠️ Authentication Note**: Username/password authentication is **NOT currently supported**. The ECi panel uses **no encryption** for TCP/IP communication. Only User PIN is required for arm/disarm operations.
+
+> **Advanced connection setting**: Use the default `Welcome` banner unless your panel reports a different initial banner. Set **Expected connection banner** to the panel's prefix, or `*` to accept any non-empty banner.
 
 
 #### User PIN Format

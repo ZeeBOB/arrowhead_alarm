@@ -22,6 +22,8 @@ from .const import (
     DEFAULT_USER_PIN,
     DEFAULT_USERNAME,
     DEFAULT_PASSWORD,
+    CONF_EXPECTED_BANNER,
+    DEFAULT_EXPECTED_BANNER,
     SERVICE_TIMEOUTS,
     HEALTH_CHECK,
     validate_configuration_input,
@@ -176,7 +178,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             config["port"], 
             config["user_pin"], 
             config["username"], 
-            config["password"]
+            config["password"],
+            expected_banner=config["expected_banner"],
         )
 
         # Test connection with timeout
@@ -323,10 +326,14 @@ async def _validate_entry_configuration(entry: ConfigEntry) -> Dict[str, Any]:
         else:
             result["config"]["user_pin"] = DEFAULT_USER_PIN
         
-        # Extract credentials
         result["config"]["username"] = entry.data.get("username", DEFAULT_USERNAME)
         result["config"]["password"] = entry.data.get("password", DEFAULT_PASSWORD)
-        
+        expected_banner = entry.data.get(CONF_EXPECTED_BANNER, DEFAULT_EXPECTED_BANNER)
+        if not isinstance(expected_banner, str) or not expected_banner.strip():
+            result["errors"].append("Expected connection banner must be a non-empty string")
+            result["valid"] = False
+        else:
+            result["config"]["expected_banner"] = expected_banner.strip()
         # Extract and validate zones configuration
         auto_detect_zones = entry.data.get(CONF_AUTO_DETECT_ZONES, True)
         max_zones = entry.data.get(CONF_MAX_ZONES, 16)

@@ -8,6 +8,7 @@
           "host": "IP Address",
           "port": "Port Number",
           "user_pin": "User PIN",
+          "expected_banner": "Expected connection banner",
           "username": "Username",
           "password": "Password"
         },
@@ -15,6 +16,7 @@
           "host": "The IP address where your ECi panel can be reached",
           "port": "TCP port for communication (default: 9000)",
           "user_pin": "User number and PIN code separated by space (e.g., '1 123')",
+          "expected_banner": "Panel connection banner. Use '*' to accept any non-empty banner.",
           "username": "Not currently used - leave blank",
           "password": "Not currently used - leave blank"
         }
