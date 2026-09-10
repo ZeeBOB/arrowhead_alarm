@@ -477,6 +477,50 @@ async def test_disarm_all_areas_returns_true_when_confirmed(client):
 
 
 @pytest.mark.asyncio
+async def test_disarm_area_returns_true_when_area_confirmed_disarmed(client):
+    """Regression: a confirmed disarm (area_a_armed=False) must report success."""
+    client._connection_state = ConnectionState.CONNECTED
+    client._switch_protocol_mode = AsyncMock(return_value=True)
+    client._clear_response_queue = AsyncMock()
+    client._send_command_safe = AsyncMock(return_value="OK Disarm")
+    client._status["area_a_armed"] = False
+
+    with patch("custom_components.arrowhead_alarm.arrowhead_client.asyncio.sleep", AsyncMock()):
+        result = await client.disarm_area(1, "1 123")
+
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_disarm_area_returns_false_when_area_still_armed(client):
+    """Regression: ack received but panel still reports armed -> failure."""
+    client._connection_state = ConnectionState.CONNECTED
+    client._switch_protocol_mode = AsyncMock(return_value=True)
+    client._clear_response_queue = AsyncMock()
+    client._send_command_safe = AsyncMock(return_value="OK Disarm")
+    client._status["area_a_armed"] = True
+
+    with patch("custom_components.arrowhead_alarm.arrowhead_client.asyncio.sleep", AsyncMock()):
+        result = await client.disarm_area(1, "1 123")
+
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_disarm_area_returns_true_for_untracked_area(client):
+    """Areas > 3 have no tracked state; a valid ack is trusted as success."""
+    client._connection_state = ConnectionState.CONNECTED
+    client._switch_protocol_mode = AsyncMock(return_value=True)
+    client._clear_response_queue = AsyncMock()
+    client._send_command_safe = AsyncMock(return_value="OK Disarm")
+
+    with patch("custom_components.arrowhead_alarm.arrowhead_client.asyncio.sleep", AsyncMock()):
+        result = await client.disarm_area(4, "1 123")
+
+    assert result is True
+
+
+@pytest.mark.asyncio
 async def test_send_armarea_command_returns_true_on_acknowledgment(client):
     """Area-specific arming has the same exit-delay behavior as ARMAWAY."""
     client._connection_state = ConnectionState.CONNECTED

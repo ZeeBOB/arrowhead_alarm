@@ -771,8 +771,8 @@ class ArrowheadECiClient:
                 
                 if response and ("OK" in response and "Disarm" in response):
                     confirmed = self._area_armed_state(area)
-                    if confirmed is False:
-                        _LOGGER.warning("Area %d disarm acknowledged but not confirmed armed=False", area)
+                    if confirmed is True:
+                        _LOGGER.warning("Area %d disarm acknowledged but panel still reports armed", area)
                         success = False
                     else:
                         _LOGGER.info("✅ Area %d disarmed successfully", area)
